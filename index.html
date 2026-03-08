@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUTOPSY — Diagnose Production Incidents in 30 Seconds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --red: #FF0800;
+      --red-dark: #cc0600;
+      --black: #0a0a0b;
+      --black-card: #111114;
+      --black-elevated: #1a1a1f;
+      --border-dark: #2a2a30;
+      --white: #fafafa;
+      --white-dim: #ffffffcc;
+      --white-muted: #ffffff88;
+      --green: #22c55e;
+      --yellow: #facc15;
+      --blue: #60a5fa;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--red);
+      color: var(--white);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, #0a0a0b18 39px, #0a0a0b18 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, #0a0a0b18 39px, #0a0a0b18 40px);
+      -webkit-mask-image: radial-gradient(ellipse 60% 50% at 20% 30%, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
+      mask-image: radial-gradient(ellipse 60% 50% at 20% 30%, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ===== SCROLL ANIMATIONS (bidirectional, slower) ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(80px);
+      transition: all 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-100px) rotate(-3deg);
+      transition: all 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-left.visible {
+      opacity: 1;
+      transform: translateX(0) rotate(0deg);
+    }
+
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(100px) rotate(3deg);
+      transition: all 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-right.visible {
+      opacity: 1;
+      transform: translateX(0) rotate(0deg);
+    }
+
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-scale.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .reveal-rotate {
+      opacity: 0;
+      transform: perspective(800px) rotateX(20deg) translateY(60px);
+      transition: all 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-rotate.visible {
+      opacity: 1;
+      transform: perspective(800px) rotateX(0deg) translateY(0);
+    }
+
+    .stagger-1 {
+      transition-delay: 0.1s;
+    }
+
+    .stagger-2 {
+      transition-delay: 0.2s;
+    }
+
+    .stagger-3 {
+      transition-delay: 0.3s;
+    }
+
+    .stagger-4 {
+      transition-delay: 0.4s;
+    }
+
+    /* Pixel art crisp rendering */
+    .pixel-logo {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* ===== ICON BOX ===== */
+    .icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .icon-box.on-dark {
+      background: #ff08001a;
+      border: 1px solid #ff080033;
+    }
+
+    .icon-box svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 14px 0;
+      background: #ff0800ee;
+      backdrop-filter: blur(24px) saturate(1.4);
+      border-bottom: 1px solid #ffffff18;
+      transition: all 0.3s;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 20px;
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--black);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px #00000044;
+      padding: 4px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--white-dim);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: white;
+    }
+
+    .nav-cta {
+      background: var(--black) !important;
+      color: var(--red) !important;
+      padding: 9px 22px;
+      border-radius: 8px;
+      font-weight: 700 !important;
+      font-family: var(--font-mono) !important;
+      font-size: 13px !important;
+      transition: all 0.25s !important;
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px #00000044;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 180px 40px 100px;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-decor {
+      position: absolute;
+      font-family: var(--font-mono);
+      color: #ffffff12;
+      font-size: 14px;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .hero-decor.d1 {
+      top: 140px;
+      left: 5%;
+    }
+
+    .hero-decor.d2 {
+      top: 200px;
+      right: 8%;
+    }
+
+    .hero-decor.d3 {
+      bottom: 120px;
+      left: 12%;
+    }
+
+    .hero-decor.d4 {
+      bottom: 80px;
+      right: 6%;
+    }
+
+    .hero-logo-big {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 88px;
+      height: 88px;
+      background: var(--black);
+      border-radius: 22px;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 40px #00000044;
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+      padding: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 18px;
+      border: 1px solid #ffffff30;
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--white-dim);
+      margin-bottom: 36px;
+      background: #ffffff10;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px #00000044, 0 2px 8px #00000033;
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--black);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    h1.hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(52px, 8vw, 96px);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      margin-bottom: 28px;
+      color: white;
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+    }
+
+    h1 .outline-text {
+      -webkit-text-stroke: 2px white;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 20px;
+      color: var(--white-dim);
+      max-width: 540px;
+      margin: 0 auto 52px;
+      font-weight: 400;
+      line-height: 1.65;
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+    }
+
+    @keyframes heroIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.26s both;
+    }
+
+    .install-cmd {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--black);
+      border: 2px solid var(--black);
+      border-radius: 12px;
+      padding: 16px 28px;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: var(--red);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .install-cmd:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 20px 40px #00000055;
+    }
+
+    .install-cmd .dollar {
+      color: var(--green);
+    }
+
+    .install-cmd .copy-hint {
+      font-size: 10px;
+      color: #ffffff55;
+      font-family: var(--font-body);
+      padding: 3px 8px;
+      background: #ffffff0a;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: white;
+      padding: 16px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 2px solid #ffffff44;
+      background: transparent;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-ghost:hover {
+      background: white;
+      color: var(--red);
+      border-color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px #00000033;
+    }
+
+    .hero-proof {
+      font-size: 13px;
+      color: var(--white-muted);
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
+    }
+
+    .hero-proof strong {
+      color: white;
+      font-weight: 600;
+    }
+
+    /* ===== TERMINAL ===== */
+    .terminal-wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 0 40px 140px;
+    }
+
+    .terminal {
+      background: var(--black);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 60px 120px -30px #00000088, 0 0 0 1px #ffffff10;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px;
+      background: var(--black-card);
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot:nth-child(1) {
+      background: #ff5f57;
+    }
+
+    .terminal-dot:nth-child(2) {
+      background: #febc2e;
+    }
+
+    .terminal-dot:nth-child(3) {
+      background: #28c840;
+    }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #666;
+    }
+
+    .terminal-body {
+      padding: 28px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.85;
+      color: #ccc;
+    }
+
+    .t-prompt {
+      color: var(--green);
+    }
+
+    .t-cmd {
+      color: white;
+      font-weight: 700;
+    }
+
+    .t-dim {
+      color: #666;
+    }
+
+    .t-red {
+      color: var(--red);
+    }
+
+    .t-green {
+      color: var(--green);
+    }
+
+    .t-yellow {
+      color: var(--yellow);
+    }
+
+    .t-blue {
+      color: var(--blue);
+    }
+
+    .t-bold {
+      font-weight: 700;
+      color: white;
+    }
+
+    .t-gap {
+      height: 14px;
+    }
+
+    .t-panel {
+      border: 1px solid var(--border-dark);
+      border-radius: 10px;
+      margin: 14px 0;
+      overflow: hidden;
+    }
+
+    .t-panel-head {
+      padding: 10px 16px;
+      background: var(--black-elevated);
+      border-bottom: 1px solid var(--border-dark);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #999;
+    }
+
+    .t-panel-body {
+      padding: 14px 16px;
+      font-size: 13px;
+    }
+
+    .confidence-bar {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .conf-track {
+      width: 80px;
+      height: 5px;
+      background: #333;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .conf-fill {
+      height: 100%;
+      width: 87%;
+      background: var(--green);
+      border-radius: 3px;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 9px;
+      height: 18px;
+      background: var(--red);
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+      margin-left: 3px;
+      border-radius: 1px;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* ===== SECTIONS ===== */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 16px;
+    }
+
+    .section-label.on-dark {
+      color: var(--red);
+    }
+
+    .section-label.on-red {
+      color: var(--black);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: 18px;
+      max-width: 520px;
+      margin-bottom: 60px;
+      line-height: 1.65;
+    }
+
+    .section-sub.on-dark {
+      color: #888;
+    }
+
+    .section-sub.on-red {
+      color: var(--white-dim);
+    }
+
+    /* ===== DARK SECTIONS ===== */
+    .dark-section {
+      background: var(--black);
+      position: relative;
+    }
+
+    .dark-section::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: var(--black);
+      clip-path: polygon(0 50%, 100% 0, 100% 100%, 0% 100%);
+      z-index: 1;
+    }
+
+    .dark-section::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: var(--black);
+      clip-path: polygon(0 0, 100% 0, 100% 50%, 0% 100%);
+      z-index: 1;
+    }
+
+    .dark-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 100px 40px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ===== HOW IT WORKS ===== */
+    .how-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 40px 140px;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .step-card {
+      background: var(--black);
+      border-radius: 18px;
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 20px 40px #00000033;
+    }
+
+    .step-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 30px 60px #00000055;
+    }
+
+    .step-number {
+      font-family: var(--font-display);
+      font-size: 72px;
+      font-weight: 800;
+      color: var(--red);
+      opacity: 0.12;
+      position: absolute;
+      top: -8px;
+      right: 16px;
+      line-height: 1;
+    }
+
+    .step-card h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      margin: 20px 0 10px;
+      color: white;
+    }
+
+    .step-card p {
+      font-size: 14px;
+      color: #777;
+      line-height: 1.7;
+    }
+
+    .step-tag {
+      display: inline-block;
+      margin-top: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: #ff080012;
+      color: var(--red);
+      border: 1px solid #ff080022;
+    }
+
+    /* ===== ZERO TRUST ===== */
+    .zt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .zt-diagram {
+      background: var(--black-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 18px;
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .zt-diagram::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--red), transparent);
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .flow-chip {
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1px solid;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .chip-you {
+      border-color: var(--green);
+      color: var(--green);
+      background: #22c55e0a;
+    }
+
+    .chip-aws {
+      border-color: var(--yellow);
+      color: var(--yellow);
+      background: #facc150a;
+    }
+
+    .chip-gh {
+      border-color: #aaa;
+      color: #aaa;
+      background: #ffffff06;
+    }
+
+    .chip-ai {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: #60a5fa0a;
+    }
+
+    .chip-dead {
+      border-color: var(--red);
+      color: var(--red);
+      background: #ff08000a;
+      border-style: dashed;
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .flow-arrow-r {
+      color: #444;
+      font-size: 16px;
+    }
+
+    .flow-tag {
+      font-size: 11px;
+      color: #555;
+      margin-top: -8px;
+      margin-bottom: 12px;
+      padding-left: 2px;
+    }
+
+    .zt-features {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .zt-feat {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .zt-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #22c55e12;
+      border: 1px solid #22c55e33;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .zt-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .zt-feat h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: white;
+    }
+
+    .zt-feat p {
+      font-size: 14px;
+      color: #777;
+      line-height: 1.6;
+    }
+
+    /* ===== COMPARISON ===== */
+    .compare-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 40px 140px;
+    }
+
+    .compare-table-wrap {
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 30px 60px #00000033;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 18px 24px;
+      text-align: left;
+    }
+
+    .compare-table thead th {
+      background: var(--black);
+      color: #888;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 2px solid var(--border-dark);
+    }
+
+    .compare-table thead th:last-child {
+      color: var(--red);
+    }
+
+    .compare-table tbody td {
+      background: var(--black-card);
+      color: #777;
+      border-bottom: 1px solid #1f1f24;
+    }
+
+    .compare-table tbody td:first-child {
+      color: white;
+      font-weight: 600;
+    }
+
+    .compare-table tbody td:last-child {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .compare-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .compare-table tbody tr {
+      transition: all 0.3s;
+    }
+
+    .compare-table tbody tr:hover td {
+      background: var(--black-elevated);
+    }
+
+    /* ===== PRICING ===== */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 840px;
+    }
+
+    .price-card {
+      background: var(--black-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 18px;
+      padding: 48px 36px;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .price-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px #00000055;
+    }
+
+    .price-card.featured {
+      border-color: var(--red);
+      position: relative;
+      box-shadow: 0 0 40px #ff08001a;
+    }
+
+    .price-card.coming-soon {
+      border-color: var(--border-dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-card.coming-soon::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(-45deg,
+          transparent,
+          transparent 10px,
+          #ffffff03 10px,
+          #ffffff03 20px);
+      pointer-events: none;
+    }
+
+    .coming-badge {
+      position: absolute;
+      top: -12px;
+      left: 28px;
+      background: var(--white);
+      color: var(--black);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .price-coming {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+      color: white;
+    }
+
+    .price-features.dimmed li {
+      color: #555;
+    }
+
+    .price-features.dimmed li::before {
+      color: #333;
+    }
+
+    .btn-waitlist {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid var(--border-dark);
+      color: #888;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      gap: 8px;
+    }
+
+    .btn-waitlist:hover {
+      border-color: #555;
+      color: white;
+      background: var(--black-elevated);
+    }
+
+    .btn-waitlist svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: -12px;
+      left: 28px;
+      background: var(--red);
+      color: white;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .price-tier {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 16px;
+    }
+
+    .price-amount {
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 6px;
+      color: white;
+    }
+
+    .price-amount span {
+      font-size: 16px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .price-desc {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 32px;
+    }
+
+    .price-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    .price-features li {
+      font-size: 14px;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .price-features li::before {
+      content: '→';
+      color: var(--red);
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    .btn-dark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      background: var(--black-elevated);
+      border: 1px solid var(--border-dark);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-dark:hover {
+      background: #222;
+      border-color: #444;
+    }
+
+    .btn-red {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      background: var(--red);
+      border: none;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+      box-shadow: 0 0 30px #ff080044;
+    }
+
+    .btn-red:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px #ff080066;
+    }
+
+    /* ===== MARQUEE ===== */
+    .marquee-wrap {
+      overflow: hidden;
+      padding: 30px 0;
+      border-top: 1px solid #ffffff15;
+      border-bottom: 1px solid #ffffff15;
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 60px;
+      animation: marquee 20s linear infinite;
+      width: max-content;
+    }
+
+    .marquee-item {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff30;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    @keyframes marquee {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    /* ===== FINAL CTA ===== */
+    .final-section {
+      text-align: center;
+      padding: 80px 40px 140px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .final-section h2 {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      color: white;
+    }
+
+    .final-section h2 .dark-accent {
+      color: var(--black);
+    }
+
+    .final-section p {
+      font-size: 18px;
+      color: var(--white-dim);
+      margin-bottom: 48px;
+    }
+
+    .final-cmd {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--black);
+      border-radius: 14px;
+      padding: 22px 36px;
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--red);
+      cursor: pointer;
+      box-shadow: 0 20px 60px #00000044;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .final-cmd:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 30px 80px #00000066;
+    }
+
+    .final-cmd .dollar {
+      color: var(--green);
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--black);
+      padding: 40px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: #555;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #aaa;
+    }
+
+    /* ===== ROAMING BUG ===== */
+    .page-bug {
+      position: fixed;
+      width: 28px;
+      height: 28px;
+      z-index: 9998;
+      cursor: pointer;
+      mix-blend-mode: difference;
+      transition: none;
+      will-change: transform;
+    }
+
+    .page-bug svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .page-bug.dead {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .page-bug.rescue {
+      pointer-events: none;
+    }
+
+    .bug-legs {
+      animation: bugWalk 0.2s steps(2) infinite;
+    }
+
+    .page-bug.dead .bug-legs {
+      animation: none;
+    }
+
+    @keyframes bugWalk {
+      0% {
+        transform: rotate(-15deg);
+      }
+
+      100% {
+        transform: rotate(15deg);
+      }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width:768px) {
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .zt-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .compare-table th,
+      .compare-table td {
+        padding: 12px 14px;
+        font-size: 12px;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+
+      .dark-section::before,
+      .dark-section::after {
+        height: 40px;
+      }
+
+      .hero-logo-big {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HIDDEN SVG ICONS -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+    <symbol id="ico-collect" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="2" />
+      <path d="M16.24 7.76a6 6 0 0 1 0 8.49" />
+      <path d="M7.76 16.24a6 6 0 0 1 0-8.49" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+      <path d="M4.93 19.07a10 10 0 0 1 0-14.14" />
+    </symbol>
+    <symbol id="ico-correlate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a4 4 0 0 1 4 4c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2a4 4 0 0 1 4-4z" />
+      <path d="M8 8v3a4 4 0 0 0 8 0V8" />
+      <line x1="12" y1="15" x2="12" y2="22" />
+      <line x1="8" y1="19" x2="16" y2="19" />
+      <circle cx="6" cy="12" r="1.5" />
+      <circle cx="18" cy="12" r="1.5" />
+      <path d="M8 8L6 12M16 8l2 4" />
+    </symbol>
+    <symbol id="ico-diagnose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="4" />
+      <line x1="12" y1="2" x2="12" y2="6" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+      <line x1="2" y1="12" x2="6" y2="12" />
+      <line x1="18" y1="12" x2="22" y2="12" />
+    </symbol>
+    <symbol id="ico-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </symbol>
+    <symbol id="ico-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <circle cx="8" cy="15" r="5" />
+      <path d="M11.7 11.3L17 6" />
+      <path d="M17 6h4v4" />
+      <path d="M14 9l3-3" />
+    </symbol>
+    <symbol id="ico-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+      <line x1="14" y1="4" x2="10" y2="20" opacity="0.5" />
+    </symbol>
+    <symbol id="ico-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
+      <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
+    </symbol>
+  </svg>
+
+  <!-- PIXEL SPARK PLUG (reusable inline SVG) -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+    <symbol id="pixel-plug-red" viewBox="0 0 16 16">
+      <rect x="2" y="1" width="1" height="1" fill="#FF0800" />
+      <rect x="1" y="2" width="1" height="1" fill="#FF0800" />
+      <rect x="2" y="2" width="1" height="1" fill="#FF0800" />
+      <rect x="2" y="3" width="1" height="1" fill="#FF0800" />
+      <rect x="3" y="3" width="1" height="1" fill="#FF0800" />
+      <rect x="3" y="4" width="1" height="1" fill="#FF0800" />
+      <rect x="13" y="1" width="1" height="1" fill="#FF0800" />
+      <rect x="13" y="2" width="1" height="1" fill="#FF0800" />
+      <rect x="14" y="2" width="1" height="1" fill="#FF0800" />
+      <rect x="12" y="3" width="1" height="1" fill="#FF0800" />
+      <rect x="13" y="3" width="1" height="1" fill="#FF0800" />
+      <rect x="12" y="4" width="1" height="1" fill="#FF0800" />
+      <rect x="6" y="0" width="1" height="3" fill="#FF0800" />
+      <rect x="9" y="0" width="1" height="3" fill="#FF0800" />
+      <rect x="5" y="3" width="6" height="1" fill="#FF0800" />
+      <rect x="4" y="4" width="8" height="1" fill="#FF0800" />
+      <rect x="4" y="5" width="8" height="1" fill="#FF0800" />
+      <rect x="5" y="6" width="6" height="1" fill="#FF0800" />
+      <rect x="6" y="7" width="4" height="1" fill="#FF0800" />
+      <rect x="6" y="8" width="4" height="1" fill="#FF0800" />
+      <rect x="6" y="9" width="4" height="1" fill="#FF0800" />
+      <rect x="5" y="10" width="6" height="1" fill="#FF0800" />
+      <rect x="5" y="11" width="6" height="1" fill="#FF0800" />
+      <rect x="7" y="12" width="2" height="1" fill="#FF0800" />
+      <rect x="7" y="13" width="2" height="1" fill="#FF0800" />
+      <rect x="5" y="13" width="1" height="1" fill="#FF0800" />
+      <rect x="10" y="13" width="1" height="1" fill="#FF0800" />
+      <rect x="4" y="14" width="1" height="1" fill="#FF0800" />
+      <rect x="6" y="14" width="1" height="1" fill="#FF0800" />
+      <rect x="9" y="14" width="1" height="1" fill="#FF0800" />
+      <rect x="11" y="14" width="1" height="1" fill="#FF0800" />
+      <rect x="5" y="15" width="1" height="1" fill="#FF0800" />
+      <rect x="10" y="15" width="1" height="1" fill="#FF0800" />
+    </symbol>
+    <symbol id="pixel-plug-dark" viewBox="0 0 16 16">
+      <rect x="2" y="1" width="1" height="1" fill="#0a0a0b" />
+      <rect x="1" y="2" width="1" height="1" fill="#0a0a0b" />
+      <rect x="2" y="2" width="1" height="1" fill="#0a0a0b" />
+      <rect x="2" y="3" width="1" height="1" fill="#0a0a0b" />
+      <rect x="3" y="3" width="1" height="1" fill="#0a0a0b" />
+      <rect x="3" y="4" width="1" height="1" fill="#0a0a0b" />
+      <rect x="13" y="1" width="1" height="1" fill="#0a0a0b" />
+      <rect x="13" y="2" width="1" height="1" fill="#0a0a0b" />
+      <rect x="14" y="2" width="1" height="1" fill="#0a0a0b" />
+      <rect x="12" y="3" width="1" height="1" fill="#0a0a0b" />
+      <rect x="13" y="3" width="1" height="1" fill="#0a0a0b" />
+      <rect x="12" y="4" width="1" height="1" fill="#0a0a0b" />
+      <rect x="6" y="0" width="1" height="3" fill="#0a0a0b" />
+      <rect x="9" y="0" width="1" height="3" fill="#0a0a0b" />
+      <rect x="5" y="3" width="6" height="1" fill="#0a0a0b" />
+      <rect x="4" y="4" width="8" height="1" fill="#0a0a0b" />
+      <rect x="4" y="5" width="8" height="1" fill="#0a0a0b" />
+      <rect x="5" y="6" width="6" height="1" fill="#0a0a0b" />
+      <rect x="6" y="7" width="4" height="1" fill="#0a0a0b" />
+      <rect x="6" y="8" width="4" height="1" fill="#0a0a0b" />
+      <rect x="6" y="9" width="4" height="1" fill="#0a0a0b" />
+      <rect x="5" y="10" width="6" height="1" fill="#0a0a0b" />
+      <rect x="5" y="11" width="6" height="1" fill="#0a0a0b" />
+      <rect x="7" y="12" width="2" height="1" fill="#0a0a0b" />
+      <rect x="7" y="13" width="2" height="1" fill="#0a0a0b" />
+      <rect x="5" y="13" width="1" height="1" fill="#0a0a0b" />
+      <rect x="10" y="13" width="1" height="1" fill="#0a0a0b" />
+      <rect x="4" y="14" width="1" height="1" fill="#0a0a0b" />
+      <rect x="6" y="14" width="1" height="1" fill="#0a0a0b" />
+      <rect x="9" y="14" width="1" height="1" fill="#0a0a0b" />
+      <rect x="11" y="14" width="1" height="1" fill="#0a0a0b" />
+      <rect x="5" y="15" width="1" height="1" fill="#0a0a0b" />
+      <rect x="10" y="15" width="1" height="1" fill="#0a0a0b" />
+    </symbol>
+  </svg>
+
+  <!-- ========== NAV ========== -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <div class="logo-mark">
+          <svg class="pixel-logo" width="28" height="28" shape-rendering="crispEdges">
+            <use href="#pixel-plug-red" />
+          </svg>
+        </div>
+        AUTOPSY
+      </a>
+      <ul class="nav-links">
+        <li><a href="#how">How It Works</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#compare">Compare</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#" class="nav-cta"
+            onclick="event.preventDefault(); navigator.clipboard.writeText('pip install autopsy'); this.textContent='Copied!'; setTimeout(()=>this.textContent='$ install →', 1500)">$
+            install →</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ========== HERO ========== -->
+  <div class="hero">
+    <div class="hero-decor d1">grep -r "ERROR" /var/log</div>
+    <div class="hero-decor d2">panic: runtime error</div>
+    <div class="hero-decor d3">502 Bad Gateway</div>
+    <div class="hero-decor d4">ConnectionTimeout</div>
+
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Open Source · MIT License · v1.0
+    </div>
+    <h1 class="hero-title">Diagnose incidents.<br><span class="outline-text">Not symptoms.</span></h1>
+    <p class="hero-sub">One CLI command correlates your logs with your deploys, powered by AI. Root cause in 30 seconds,
+      not 30 minutes.</p>
+    <div class="hero-actions">
+      <div class="install-cmd"
+        onclick="navigator.clipboard.writeText('pip install autopsy'); this.querySelector('.copy-hint').textContent='Copied!'">
+        <span class="dollar">$</span> pip install autopsy
+        <span class="copy-hint">copy</span>
+      </div>
+      <a href="https://github.com/zaappy/autopsy" target="_blank" class="btn-ghost">View on GitHub →</a>
+    </div>
+    <p class="hero-proof">Used by SREs at <strong>50+ startups</strong>. Zero config. Zero vendor lock-in.</p>
+  </div>
+
+  <!-- ========== TERMINAL ========== -->
+  <div class="terminal-wrap">
+    <div class="terminal reveal-rotate">
+      <div class="terminal-bar">
+        <span class="terminal-dot"></span>
+        <span class="terminal-dot"></span>
+        <span class="terminal-dot"></span>
+        <span class="terminal-title">~/projects/api — autopsy diagnose</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">❯</span> <span class="t-cmd">autopsy diagnose</span></div>
+        <div class="t-gap"></div>
+        <div><span class="t-dim">✔ Config loaded (2 log groups, 5 deploys)</span></div>
+        <div><span class="t-dim">⏳ Pulling logs from CloudWatch...</span> <span class="t-green">done</span></div>
+        <div><span class="t-dim">⏳ Pulling deploys from GitHub...</span> <span class="t-green">done</span></div>
+        <div><span class="t-dim">⏳ Analyzing with Claude Sonnet...</span> <span class="t-green">done</span></div>
+        <div class="t-gap"></div>
+        <div class="t-panel">
+          <div class="t-panel-head">
+            <span class="t-red">●</span> ROOT CAUSE
+            <span class="confidence-bar">
+              <span class="conf-track"><span class="conf-fill"></span></span>
+              <span class="t-green" style="font-size:12px;">87%</span>
+            </span>
+          </div>
+          <div class="t-panel-body">
+            <div><span class="t-bold">Database connection pool exhaustion</span> — N+1 query in user activity feed</div>
+            <div style="margin-top:6px;"><span class="t-dim">Commit</span> <span class="t-yellow">a3f7c2e</span> <span
+                class="t-dim">by</span> <span class="t-blue">@sarah</span> <span class="t-dim">· PR #482 "Add user
+                activity feed"</span></div>
+            <div style="margin-top:6px;"><span class="t-dim">Category:</span> <span
+                style="color:white">code_change</span></div>
+          </div>
+        </div>
+        <div class="t-panel">
+          <div class="t-panel-head"><span class="t-green">▲</span> SUGGESTED FIX</div>
+          <div class="t-panel-body">
+            <div><span class="t-red">NOW →</span> <span style="color:white">Revert a3f7c2e or set pool_size=50 in db
+                config</span></div>
+            <div><span class="t-blue">LATER →</span> <span style="color:white">Add eager loading for user.activities
+                relation</span></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;"><span class="t-prompt">❯</span> <span class="cursor-blink"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="how-section" id="how">
+    <div class="section-label on-red reveal">How It Works</div>
+    <div class="section-title reveal" style="color:white;">Three steps. Thirty seconds.</div>
+    <div class="section-sub on-red reveal">No agents. No dashboards. No vendor onboarding. Just pip install and one
+      command.</div>
+    <div class="steps-grid">
+      <div class="step-card reveal-left stagger-1">
+        <span class="step-number">01</span>
+        <div class="icon-box on-dark"><svg style="color:var(--red)">
+            <use href="#ico-collect" />
+          </svg></div>
+        <h3>Collect</h3>
+        <p>Pulls error logs from CloudWatch and recent deploys from GitHub. Uses your own credentials — nothing leaves
+          your machine.</p>
+        <span class="step-tag">boto3 + PyGitHub</span>
+      </div>
+      <div class="step-card reveal stagger-2">
+        <span class="step-number">02</span>
+        <div class="icon-box on-dark"><svg style="color:var(--red)">
+            <use href="#ico-correlate" />
+          </svg></div>
+        <h3>Correlate</h3>
+        <p>Feeds logs + diffs into an LLM with a purpose-built diagnostic prompt. Automatically maps errors to code
+          changes.</p>
+        <span class="step-tag">Claude API</span>
+      </div>
+      <div class="step-card reveal-right stagger-3">
+        <span class="step-number">03</span>
+        <div class="icon-box on-dark"><svg style="color:var(--red)">
+            <use href="#ico-diagnose" />
+          </svg></div>
+        <h3>Diagnose</h3>
+        <p>Outputs root cause, causal commit, confidence score, and a suggested fix — right in your terminal. Paste into
+          Slack.</p>
+        <span class="step-tag">Rich output</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ZERO TRUST ========== -->
+  <div class="dark-section" id="security">
+    <div class="dark-inner">
+      <div class="section-label on-dark reveal">Zero Trust Security</div>
+      <div class="section-title reveal" style="color:white;">Your logs never<br>touch our servers.</div>
+      <div class="section-sub on-dark reveal">No data ingestion. No security review. The CLI runs on your machine with
+        your credentials.</div>
+      <div class="zt-grid">
+        <div class="zt-diagram reveal-left">
+          <div class="flow-step"><span class="flow-chip chip-you">Your Terminal</span><span
+              class="flow-arrow-r">→</span><span class="flow-chip chip-aws">CloudWatch</span></div>
+          <div class="flow-tag">Your IAM credentials</div>
+          <div class="flow-step"><span class="flow-chip chip-you">Your Terminal</span><span
+              class="flow-arrow-r">→</span><span class="flow-chip chip-gh">GitHub API</span></div>
+          <div class="flow-tag">Your Personal Access Token</div>
+          <div class="flow-step"><span class="flow-chip chip-you">Your Terminal</span><span
+              class="flow-arrow-r">→</span><span class="flow-chip chip-ai">Claude API</span></div>
+          <div class="flow-tag">Your API key</div>
+          <div class="flow-step" style="margin-top:28px;margin-bottom:0;">
+            <span class="flow-chip chip-dead">AUTOPSY Servers</span>
+            <span style="color:var(--red);font-size:22px;font-weight:800;margin-left:8px;">✕</span>
+            <span style="color:#555;font-size:12px;margin-left:4px;">Never contacted</span>
+          </div>
+        </div>
+        <ul class="zt-features">
+          <li class="zt-feat reveal-right stagger-1">
+            <div class="zt-icon"><svg style="color:var(--green)">
+                <use href="#ico-shield" />
+              </svg></div>
+            <div>
+              <h4>100% local execution</h4>
+              <p>No background services, no phone-home, no telemetry by default. A pure CLI process.</p>
+            </div>
+          </li>
+          <li class="zt-feat reveal-right stagger-2">
+            <div class="zt-icon"><svg style="color:var(--green)">
+                <use href="#ico-key" />
+              </svg></div>
+            <div>
+              <h4>Credentials never leave env</h4>
+              <p>Config stores env variable names, not values. Works with aws-vault, 1Password, direnv.</p>
+            </div>
+          </li>
+          <li class="zt-feat reveal-right stagger-3">
+            <div class="zt-icon"><svg style="color:var(--green)">
+                <use href="#ico-code" />
+              </svg></div>
+            <div>
+              <h4>Fully auditable codebase</h4>
+              <p>Open source, MIT license. Grep it — only three outbound domains exist in the code.</p>
+            </div>
+          </li>
+          <li class="zt-feat reveal-right stagger-4">
+            <div class="zt-icon"><svg style="color:var(--green)">
+                <use href="#ico-chip" />
+              </svg></div>
+            <div>
+              <h4>Local LLM support planned</h4>
+              <p>Ollama integration on the roadmap for air-gapped and high-security environments.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== COMPARISON ========== -->
+  <section class="compare-section" id="compare" style="padding-top:140px;">
+    <div class="section-label on-red reveal">Why AUTOPSY</div>
+    <div class="section-title reveal" style="color:white;">Built for the 3am incident.</div>
+    <div class="section-sub on-red reveal">Enterprise platforms take months. We take 30 seconds.</div>
+    <div class="compare-table-wrap reveal-scale">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Enterprise Tools</th>
+            <th>Incident Platforms</th>
+            <th>AUTOPSY ●</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Time to value</td>
+            <td>Weeks to months</td>
+            <td>Days to weeks</td>
+            <td>30 seconds</td>
+          </tr>
+          <tr>
+            <td>Root cause diagnosis</td>
+            <td>Manual / basic AI</td>
+            <td>Not their focus</td>
+            <td>AI-powered, automated</td>
+          </tr>
+          <tr>
+            <td>Setup required</td>
+            <td>Agent deploy + config</td>
+            <td>Org-wide onboarding</td>
+            <td>pip install + 1 config</td>
+          </tr>
+          <tr>
+            <td>Data residency</td>
+            <td>Vendor cloud</td>
+            <td>Vendor cloud</td>
+            <td>Your machine only</td>
+          </tr>
+          <tr>
+            <td>Pricing</td>
+            <td>$23+/host/month</td>
+            <td>$20+/user/month</td>
+            <td>Free forever (CLI)</td>
+          </tr>
+          <tr>
+            <td>Security review</td>
+            <td>Required</td>
+            <td>Required</td>
+            <td>Not needed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ========== MARQUEE ========== -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span class="marquee-item">Incident Autopsy</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Production Diagnosis</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Deploy Correlation</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Zero Trust</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Open Source</span><span class="marquee-item">·</span>
+      <span class="marquee-item">30 Second Root Cause</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Claude Powered</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Incident Autopsy</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Production Diagnosis</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Deploy Correlation</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Zero Trust</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Open Source</span><span class="marquee-item">·</span>
+      <span class="marquee-item">30 Second Root Cause</span><span class="marquee-item">·</span>
+      <span class="marquee-item">Claude Powered</span>
+    </div>
+  </div>
+
+  <!-- ========== PRICING ========== -->
+  <div class="dark-section" id="pricing">
+    <div class="dark-inner">
+      <div class="section-label on-dark reveal">Pricing</div>
+      <div class="section-title reveal" style="color:white;">Free for you.<br>Built for your team.</div>
+      <div class="section-sub on-dark reveal">The CLI is free forever. AUTOPSY Cloud for teams is coming soon.</div>
+      <div class="pricing-grid">
+        <div class="price-card reveal-left">
+          <div class="price-tier">CLI — Open Source</div>
+          <div class="price-amount">$0 <span>forever</span></div>
+          <p class="price-desc">Everything you need to diagnose solo.</p>
+          <ul class="price-features">
+            <li>AI-powered root cause analysis</li>
+            <li>CloudWatch + GitHub integration</li>
+            <li>JSON output for CI/CD piping</li>
+            <li>Zero-trust architecture</li>
+            <li>Community Discord support</li>
+          </ul>
+          <a href="#" class="btn-dark"
+            onclick="event.preventDefault(); navigator.clipboard.writeText('pip install autopsy'); this.textContent='Copied!'; setTimeout(()=>this.textContent='pip install autopsy', 1500)">pip
+            install autopsy</a>
+        </div>
+        <div class="price-card coming-soon reveal-right">
+          <div class="coming-badge">Coming Soon</div>
+          <div class="price-tier">Cloud — For Teams</div>
+          <div class="price-coming">Coming Soon</div>
+          <p class="price-desc" style="color:#555;">Turn incidents into institutional knowledge. Team features launching
+            soon.</p>
+          <ul class="price-features dimmed">
+            <li>Everything in CLI, plus:</li>
+            <li>Persistent incident history</li>
+            <li>Team dashboard + MTTR tracking</li>
+            <li>AI-generated post-mortems</li>
+            <li>Slack integration</li>
+          </ul>
+          <a href="#" class="btn-waitlist">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M22 2L11 13" />
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+            </svg>
+            Join the Waitlist
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== FINAL CTA ========== -->
+  <div class="final-section" style="padding-top:140px;">
+    <div class="reveal">
+      <div
+        style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:var(--black);border-radius:18px;margin-bottom:28px;box-shadow:0 12px 30px #00000044;padding:10px;">
+        <svg class="pixel-logo" width="44" height="44" shape-rendering="crispEdges">
+          <use href="#pixel-plug-red" />
+        </svg>
+      </div>
+    </div>
+    <h2 class="reveal stagger-1">Your next incident is<br><span class="dark-accent">30 seconds</span> away<br>from a
+      root cause.</h2>
+    <p class="reveal stagger-2">Stop grepping logs at 3am. Let AI correlate — you decide.</p>
+    <div class="reveal stagger-3">
+      <div class="final-cmd"
+        onclick="navigator.clipboard.writeText('pip install autopsy'); this.querySelector('.cp').textContent='Copied!'">
+        <span class="dollar">$</span>
+        pip install autopsy
+        <span class="cp"
+          style="font-size:10px;color:#ffffff55;font-family:var(--font-body);padding:3px 10px;background:#ffffff0a;border-radius:5px;text-transform:uppercase;letter-spacing:0.08em;">copy</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== FOOTER ========== -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <svg class="pixel-logo" width="18" height="18" shape-rendering="crispEdges">
+          <use href="#pixel-plug-red" />
+        </svg>
+        © 2026 AUTOPSY · Open source under MIT License
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/zaappy/autopsy" target="_blank">Docs</a></li>
+        <li><a href="https://github.com/zaappy/autopsy" target="_blank">GitHub</a></li>
+        <li><a href="#">Discord</a></li>
+        <li><a href="#">Twitter/X</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          } else {
+            entry.target.classList.remove('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -80px 0px' });
+      document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale,.reveal-rotate').forEach(el => observer.observe(el));
+
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            const y = window.scrollY;
+            document.querySelectorAll('.hero-decor').forEach((el, i) => {
+              const speed = 0.15 + (i * 0.05);
+              const rot = (i % 2 === 0 ? -12 : 8) + y * 0.015;
+              el.style.transform = `translateY(${y * speed}px) rotate(${rot}deg)`;
+            });
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+
+      const nav = document.querySelector('nav');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 80) { nav.style.background = '#cc0600f5'; nav.style.boxShadow = '0 4px 20px #00000033'; }
+        else { nav.style.background = '#ff0800ee'; nav.style.boxShadow = 'none'; }
+      });
+    })();
+  </script>
+
+  <!-- ROAMING BUG EASTER EGG -->
+  <script>
+    (function () {
+      const BUG_SVG = `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#FF0800">
+        <!-- body -->
+        <ellipse cx="16" cy="17" rx="5" ry="7"/>
+        <!-- head -->
+        <circle cx="16" cy="9" r="3.5"/>
+        <!-- eyes -->
+        <circle cx="14.5" cy="8" r="1" fill="#000"/>
+        <circle cx="17.5" cy="8" r="1" fill="#000"/>
+        <!-- antennae -->
+        <line x1="14" y1="6" x2="10" y2="2" stroke="#FF0800" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="18" y1="6" x2="22" y2="2" stroke="#FF0800" stroke-width="1.2" stroke-linecap="round"/>
+        <!-- left legs -->
+        <g class="bug-legs">
+          <line x1="12" y1="13" x2="7" y2="10" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="11" y1="17" x2="5" y2="17" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="12" y1="21" x2="7" y2="24" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
+        </g>
+        <!-- right legs -->
+        <g class="bug-legs" style="animation-delay:0.1s">
+          <line x1="20" y1="13" x2="25" y2="10" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="21" y1="17" x2="27" y2="17" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="20" y1="21" x2="25" y2="24" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
+        </g>
+      </g>
+    </svg>`;
+
+      function createBug(cls) {
+        const el = document.createElement('div');
+        el.className = 'page-bug' + (cls ? ' ' + cls : '');
+        el.innerHTML = BUG_SVG;
+        document.body.appendChild(el);
+        return el;
+      }
+
+      function rand(min, max) { return Math.random() * (max - min) + min; }
+
+      function roam(bug) {
+        if (bug._dead) return;
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const tx = rand(40, vw - 60), ty = rand(40, vh - 60);
+        const cx = parseFloat(bug.style.left) || vw / 2;
+        const cy = parseFloat(bug.style.top) || vh / 2;
+        const dx = tx - cx, dy = ty - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+        const speed = rand(60, 120); // px per second
+        const duration = (dist / speed) * 1000;
+
+        bug.style.transform = `rotate(${angle}deg)`;
+        bug.style.transition = `left ${duration}ms linear, top ${duration}ms linear`;
+        bug.style.left = tx + 'px';
+        bug.style.top = ty + 'px';
+
+        // pause sometimes
+        const pause = Math.random() < 0.3 ? rand(500, 2000) : 0;
+        bug._roamTimer = setTimeout(() => roam(bug), duration + pause);
+      }
+
+      function killBug(bug) {
+        bug._dead = true;
+        clearTimeout(bug._roamTimer);
+        bug.classList.add('dead');
+        // flip upside down
+        const cur = bug.style.transform || 'rotate(0deg)';
+        bug.style.transition = 'transform 0.4s ease';
+        bug.style.transform = cur + ' scaleY(-1)';
+
+        setTimeout(() => sendRescue(bug), 1200);
+      }
+
+      function sendRescue(deadBug) {
+        const dx = parseFloat(deadBug.style.left);
+        const dy = parseFloat(deadBug.style.top);
+        const exitX = dx < window.innerWidth / 2 ? -60 : window.innerWidth + 60;
+
+        // create two rescue bugs from the exit edge
+        const r1 = createBug('rescue');
+        const r2 = createBug('rescue');
+        r1.style.left = exitX + 'px'; r1.style.top = (dy - 20) + 'px';
+        r2.style.left = exitX + 'px'; r2.style.top = (dy + 20) + 'px';
+
+        const approachAngle = exitX < 0 ? 90 : -90;
+        r1.style.transform = `rotate(${approachAngle}deg)`;
+        r2.style.transform = `rotate(${approachAngle}deg)`;
+
+        // approach the dead bug
+        requestAnimationFrame(() => {
+          const dur = '1.5s';
+          r1.style.transition = `left ${dur} ease, top ${dur} ease`;
+          r2.style.transition = `left ${dur} ease, top ${dur} ease`;
+          r1.style.left = (dx - 14) + 'px'; r1.style.top = dy + 'px';
+          r2.style.left = (dx + 14) + 'px'; r2.style.top = dy + 'px';
+        });
+
+        // carry off
+        setTimeout(() => {
+          const carryAngle = exitX < 0 ? -90 : 90;
+          r1.style.transform = `rotate(${carryAngle}deg)`;
+          r2.style.transform = `rotate(${carryAngle}deg)`;
+          deadBug.style.transition = 'left 2s ease, top 2s ease, transform 2s ease';
+          r1.style.transition = 'left 2s ease, top 2s ease, transform 0.3s ease';
+          r2.style.transition = 'left 2s ease, top 2s ease, transform 0.3s ease';
+          deadBug.style.left = exitX + 'px';
+          r1.style.left = exitX + 'px';
+          r2.style.left = exitX + 'px';
+        }, 1800);
+
+        // cleanup & respawn
+        setTimeout(() => {
+          deadBug.remove(); r1.remove(); r2.remove();
+          spawnBug();
+        }, 4200);
+      }
+
+      function spawnBug() {
+        const bug = createBug();
+        const edge = Math.floor(rand(0, 4));
+        const vw = window.innerWidth, vh = window.innerHeight;
+        if (edge === 0) { bug.style.left = rand(0, vw) + 'px'; bug.style.top = '-30px'; }
+        else if (edge === 1) { bug.style.left = rand(0, vw) + 'px'; bug.style.top = (vh + 30) + 'px'; }
+        else if (edge === 2) { bug.style.left = '-30px'; bug.style.top = rand(0, vh) + 'px'; }
+        else { bug.style.left = (vw + 30) + 'px'; bug.style.top = rand(0, vh) + 'px'; }
+
+        bug.addEventListener('click', (e) => { e.stopPropagation(); killBug(bug); });
+        setTimeout(() => roam(bug), 300);
+      }
+
+      // start after page loads
+      setTimeout(spawnBug, 3000);
+    })();
+  </script>
+
+</body>
+
+</html>
