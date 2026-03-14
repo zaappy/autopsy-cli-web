@@ -49,19 +49,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 39px, #0a0a0b18 39px, #0a0a0b18 40px),
-        repeating-linear-gradient(90deg, transparent, transparent 39px, #0a0a0b18 39px, #0a0a0b18 40px);
-      -webkit-mask-image: radial-gradient(ellipse 60% 50% at 20% 30%, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
-      mask-image: radial-gradient(ellipse 60% 50% at 20% 30%, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
-      pointer-events: none;
-      z-index: 1;
-    }
-
     body::after {
       content: '';
       position: fixed;
@@ -315,7 +302,6 @@
       margin-bottom: 36px;
       background: #ffffff10;
       backdrop-filter: blur(10px);
-      box-shadow: 0 8px 24px #00000044, 0 2px 8px #00000033;
       animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
     }
 
@@ -1193,6 +1179,254 @@
       box-shadow: 0 8px 30px #ff080066;
     }
 
+    /* ===== VITAL SIGNS MONITORS ===== */
+    .ekg-section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 40px 100px;
+    }
+
+    .ekg-section-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .ekg-section-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--black);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 10px;
+    }
+
+    .ekg-section-title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .ekg-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .ekg-mini {
+      background: var(--black);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 12px 30px #00000033;
+    }
+
+    .ekg-mini:hover {
+      transform: translateY(-4px);
+      border-color: #ff080044;
+      box-shadow: 0 20px 40px #00000055;
+    }
+
+    /* span last 2 across bottom row */
+    .ekg-mini:nth-child(4) {
+      grid-column: 1 / 2;
+    }
+
+    .ekg-mini:nth-child(5) {
+      grid-column: 2 / 4;
+    }
+
+    .ekg-mini-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .ekg-mini-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ekg-mini-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .ekg-mini.active .ekg-mini-dot {
+      opacity: 1;
+      animation: ekgDotPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes ekgDotPulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 #ff080066;
+      }
+
+      50% {
+        opacity: 0.5;
+        box-shadow: 0 0 6px 3px #ff080033;
+      }
+    }
+
+    .ekg-mini-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .ekg-mini-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 600;
+      color: #444;
+      background: #ffffff08;
+      padding: 2px 7px;
+      border-radius: 3px;
+      border: 1px solid var(--border-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .ekg-mini-canvas {
+      width: 100%;
+      height: 56px;
+      margin-bottom: 12px;
+    }
+
+    .ekg-mini-canvas svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ekg-mini-flat {
+      stroke: #1e1e24;
+      stroke-width: 1.5;
+    }
+
+    .ekg-mini-line {
+      stroke: var(--red);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 4px #ff080033);
+    }
+
+    .ekg-mini-draw {
+      stroke-dasharray: var(--ml);
+      stroke-dashoffset: var(--ml);
+      transition: stroke-dashoffset 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .ekg-mini.active .ekg-mini-draw {
+      stroke-dashoffset: 0;
+    }
+
+    /* glow repeat after draw */
+    .ekg-mini-glow {
+      stroke: var(--red);
+      stroke-width: 3.5;
+      fill: none;
+      opacity: 0;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 6px #ff080055);
+      stroke-dasharray: var(--ml);
+    }
+
+    .ekg-mini.active .ekg-mini-glow {
+      animation: miniGlow 2s ease-in-out 0.7s infinite;
+    }
+
+    @keyframes miniGlow {
+      0% {
+        opacity: 0;
+        stroke-dashoffset: var(--ml);
+      }
+
+      25% {
+        opacity: 0.5;
+      }
+
+      100% {
+        opacity: 0;
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .ekg-mini-desc {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+      margin: 0;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.4s ease 0.3s;
+    }
+
+    .ekg-mini.active .ekg-mini-desc {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .ekg-mini-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #1a1a1f;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      opacity: 0;
+      transition: opacity 0.5s ease 0.7s;
+    }
+
+    .ekg-mini.active .ekg-mini-status {
+      opacity: 1;
+    }
+
+    .ekg-mini-status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    @media(max-width:768px) {
+      .ekg-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ekg-mini:nth-child(4),
+      .ekg-mini:nth-child(5) {
+        grid-column: auto;
+      }
+
+      .ekg-mini-canvas {
+        height: 48px;
+      }
+    }
+
     /* ===== MARQUEE ===== */
     .marquee-wrap {
       overflow: hidden;
@@ -1320,50 +1554,6 @@
 
     .footer-links a:hover {
       color: #aaa;
-    }
-
-    /* ===== ROAMING BUG ===== */
-    .page-bug {
-      position: fixed;
-      width: 28px;
-      height: 28px;
-      z-index: 9998;
-      cursor: pointer;
-      mix-blend-mode: difference;
-      transition: none;
-      will-change: transform;
-    }
-
-    .page-bug svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .page-bug.dead {
-      cursor: default;
-      pointer-events: none;
-    }
-
-    .page-bug.rescue {
-      pointer-events: none;
-    }
-
-    .bug-legs {
-      animation: bugWalk 0.2s steps(2) infinite;
-    }
-
-    .page-bug.dead .bug-legs {
-      animation: none;
-    }
-
-    @keyframes bugWalk {
-      0% {
-        transform: rotate(-15deg);
-      }
-
-      100% {
-        transform: rotate(15deg);
-      }
     }
 
     /* ===== RESPONSIVE ===== */
@@ -1556,13 +1746,12 @@
         AUTOPSY
       </a>
       <ul class="nav-links">
+        <li><a href="autopsy-docs.html">Docs</a></li>
         <li><a href="#how">How It Works</a></li>
         <li><a href="#security">Security</a></li>
         <li><a href="#compare">Compare</a></li>
         <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#" class="nav-cta"
-            onclick="event.preventDefault(); navigator.clipboard.writeText('pip install autopsy-cli'); this.textContent='Copied!'; setTimeout(()=>this.textContent='$ install →', 1500)">$
-            install →</a></li>
+        <li><a href="#" class="nav-cta">$ install →</a></li>
       </ul>
     </div>
   </nav>
@@ -1574,6 +1763,11 @@
     <div class="hero-decor d3">502 Bad Gateway</div>
     <div class="hero-decor d4">ConnectionTimeout</div>
 
+    <div class="hero-logo-big">
+      <svg class="pixel-logo" width="56" height="56" shape-rendering="crispEdges">
+        <use href="#pixel-plug-red" />
+      </svg>
+    </div>
     <div class="badge">
       <span class="badge-dot"></span>
       Open Source · MIT License · v1.0
@@ -1583,11 +1777,11 @@
       not 30 minutes.</p>
     <div class="hero-actions">
       <div class="install-cmd"
-        onclick="navigator.clipboard.writeText('pip install autopsy-cli'); this.querySelector('.copy-hint').textContent='Copied!'">
-        <span class="dollar">$</span> pip install autopsy-cli
+        onclick="navigator.clipboard.writeText('pip install autopsy'); this.querySelector('.copy-hint').textContent='Copied!'">
+        <span class="dollar">$</span> pip install autopsy
         <span class="copy-hint">copy</span>
       </div>
-      <a href="https://github.com/zaappy/autopsy" target="_blank" class="btn-ghost">View on GitHub →</a>
+      <a href="#" class="btn-ghost">View on GitHub →</a>
     </div>
     <p class="hero-proof">Used by SREs at <strong>50+ startups</strong>. Zero config. Zero vendor lock-in.</p>
   </div>
@@ -1637,6 +1831,129 @@
         </div>
         <div style="margin-top:14px;"><span class="t-prompt">❯</span> <span class="cursor-blink"></span></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ========== VITAL SIGNS MONITORS ========== -->
+  <div class="ekg-section">
+    <div class="ekg-section-header reveal">
+      <div class="ekg-section-label">What's new in v0.3.0</div>
+      <div class="ekg-section-title">Vital signs restored.</div>
+    </div>
+
+    <div class="ekg-grid">
+
+      <!-- MONITOR 1: DATADOG -->
+      <div class="ekg-mini reveal-left stagger-1" data-ekg>
+        <div class="ekg-mini-header">
+          <div class="ekg-mini-left">
+            <div class="ekg-mini-dot"></div>
+            <span class="ekg-mini-name">Datadog</span>
+          </div>
+          <span class="ekg-mini-tag">Logs</span>
+        </div>
+        <div class="ekg-mini-canvas">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none">
+            <line x1="0" y1="30" x2="200" y2="30" class="ekg-mini-flat" />
+            <path class="ekg-mini-line ekg-mini-draw"
+              d="M0,30 L10,30 L17,12 L24,42 L31,6 L38,38 L45,20 L52,30 L200,30" />
+            <path class="ekg-mini-line ekg-mini-glow"
+              d="M0,30 L10,30 L17,12 L24,42 L31,6 L38,38 L45,20 L52,30 L200,30" />
+          </svg>
+        </div>
+        <p class="ekg-mini-desc">Native Logs API integration. Supports all Datadog regions — us1, eu1, us3, us5, ap1.
+        </p>
+        <div class="ekg-mini-status"><span class="ekg-mini-status-dot"></span>Connected</div>
+      </div>
+
+      <!-- MONITOR 2: GITLAB -->
+      <div class="ekg-mini reveal stagger-2" data-ekg>
+        <div class="ekg-mini-header">
+          <div class="ekg-mini-left">
+            <div class="ekg-mini-dot"></div>
+            <span class="ekg-mini-name">GitLab</span>
+          </div>
+          <span class="ekg-mini-tag">Deploys</span>
+        </div>
+        <div class="ekg-mini-canvas">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none">
+            <line x1="0" y1="30" x2="200" y2="30" class="ekg-mini-flat" />
+            <path class="ekg-mini-line ekg-mini-draw"
+              d="M0,30 L12,30 L19,14 L26,44 L33,4 L40,40 L47,18 L54,30 L200,30" />
+            <path class="ekg-mini-line ekg-mini-glow"
+              d="M0,30 L12,30 L19,14 L26,44 L33,4 L40,40 L47,18 L54,30 L200,30" />
+          </svg>
+        </div>
+        <p class="ekg-mini-desc">Commits, diffs, MRs, and deploy events. Cloud and self-hosted instances.</p>
+        <div class="ekg-mini-status"><span class="ekg-mini-status-dot"></span>Connected</div>
+      </div>
+
+      <!-- MONITOR 3: SLACK -->
+      <div class="ekg-mini reveal-right stagger-3" data-ekg>
+        <div class="ekg-mini-header">
+          <div class="ekg-mini-left">
+            <div class="ekg-mini-dot"></div>
+            <span class="ekg-mini-name">Slack</span>
+          </div>
+          <span class="ekg-mini-tag">Output</span>
+        </div>
+        <div class="ekg-mini-canvas">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none">
+            <line x1="0" y1="30" x2="200" y2="30" class="ekg-mini-flat" />
+            <path class="ekg-mini-line ekg-mini-draw"
+              d="M0,30 L8,30 L15,10 L22,46 L29,8 L36,36 L43,22 L50,30 L200,30" />
+            <path class="ekg-mini-line ekg-mini-glow"
+              d="M0,30 L8,30 L15,10 L22,46 L29,8 L36,36 L43,22 L50,30 L200,30" />
+          </svg>
+        </div>
+        <p class="ekg-mini-desc">Webhook output. Pipe diagnosis to any channel. Every post = free distribution.</p>
+        <div class="ekg-mini-status"><span class="ekg-mini-status-dot"></span>Connected</div>
+      </div>
+
+      <!-- MONITOR 4: POST-MORTEM -->
+      <div class="ekg-mini reveal-left stagger-3" data-ekg>
+        <div class="ekg-mini-header">
+          <div class="ekg-mini-left">
+            <div class="ekg-mini-dot"></div>
+            <span class="ekg-mini-name">Post-Mortem</span>
+          </div>
+          <span class="ekg-mini-tag">Report</span>
+        </div>
+        <div class="ekg-mini-canvas">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none">
+            <line x1="0" y1="30" x2="200" y2="30" class="ekg-mini-flat" />
+            <path class="ekg-mini-line ekg-mini-draw"
+              d="M0,30 L14,30 L21,16 L28,40 L35,6 L42,42 L49,20 L56,30 L200,30" />
+            <path class="ekg-mini-line ekg-mini-glow"
+              d="M0,30 L14,30 L21,16 L28,40 L35,6 L42,42 L49,20 L56,30 L200,30" />
+          </svg>
+        </div>
+        <p class="ekg-mini-desc">AI-generated markdown reports. Timeline, root cause, action items — in one command.</p>
+        <div class="ekg-mini-status"><span class="ekg-mini-status-dot"></span>Connected</div>
+      </div>
+
+      <!-- MONITOR 5: DEMO MODE -->
+      <div class="ekg-mini reveal-right stagger-4" data-ekg>
+        <div class="ekg-mini-header">
+          <div class="ekg-mini-left">
+            <div class="ekg-mini-dot"></div>
+            <span class="ekg-mini-name">Demo Mode</span>
+          </div>
+          <span class="ekg-mini-tag">Try it</span>
+        </div>
+        <div class="ekg-mini-canvas">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none">
+            <line x1="0" y1="30" x2="200" y2="30" class="ekg-mini-flat" />
+            <path class="ekg-mini-line ekg-mini-draw" d="M0,30 L6,30 L13,8 L20,48 L27,2 L34,44 L41,16 L48,30 L200,30" />
+            <path class="ekg-mini-line ekg-mini-glow" d="M0,30 L6,30 L13,8 L20,48 L27,2 L34,44 L41,16 L48,30 L200,30" />
+          </svg>
+        </div>
+        <p class="ekg-mini-desc">Run <code
+            style="background:#1a1a1f;color:var(--red);padding:2px 6px;border-radius:3px;font-size:12px;">autopsy --demo</code>
+          with bundled fixture data. No credentials, no setup, instant diagnosis.</p>
+        <div class="ekg-mini-status"><span class="ekg-mini-status-dot"></span>Connected</div>
+      </div>
+
     </div>
   </div>
 
@@ -1841,9 +2158,7 @@
             <li>Zero-trust architecture</li>
             <li>Community Discord support</li>
           </ul>
-          <a href="#" class="btn-dark"
-            onclick="event.preventDefault(); navigator.clipboard.writeText('pip install autopsy-cli'); this.textContent='Copied!'; setTimeout(()=>this.textContent='pip install autopsy-cli', 1500)">pip
-            install autopsy</a>
+          <a href="#" class="btn-dark">pip install autopsy</a>
         </div>
         <div class="price-card coming-soon reveal-right">
           <div class="coming-badge">Coming Soon</div>
@@ -1886,9 +2201,9 @@
     <p class="reveal stagger-2">Stop grepping logs at 3am. Let AI correlate — you decide.</p>
     <div class="reveal stagger-3">
       <div class="final-cmd"
-        onclick="navigator.clipboard.writeText('pip install autopsy-cli'); this.querySelector('.cp').textContent='Copied!'">
+        onclick="navigator.clipboard.writeText('pip install autopsy'); this.querySelector('.cp').textContent='Copied!'">
         <span class="dollar">$</span>
-        pip install autopsy-cli
+        pip install autopsy
         <span class="cp"
           style="font-size:10px;color:#ffffff55;font-family:var(--font-body);padding:3px 10px;background:#ffffff0a;border-radius:5px;text-transform:uppercase;letter-spacing:0.08em;">copy</span>
       </div>
@@ -1905,7 +2220,7 @@
         © 2026 AUTOPSY · Open source under MIT License
       </div>
       <ul class="footer-links">
-        <li><a href="https://github.com/zaappy/autopsy" target="_blank">Docs</a></li>
+        <li><a href="autopsy-docs.html">Docs</a></li>
         <li><a href="https://github.com/zaappy/autopsy" target="_blank">GitHub</a></li>
         <li><a href="#">Discord</a></li>
         <li><a href="#">Twitter/X</a></li>
@@ -1947,142 +2262,35 @@
         if (window.scrollY > 80) { nav.style.background = '#cc0600f5'; nav.style.boxShadow = '0 4px 20px #00000033'; }
         else { nav.style.background = '#ff0800ee'; nav.style.boxShadow = 'none'; }
       });
-    })();
-  </script>
 
-  <!-- ROAMING BUG EASTER EGG -->
-  <script>
-    (function () {
-      const BUG_SVG = `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g fill="#FF0800">
-        <!-- body -->
-        <ellipse cx="16" cy="17" rx="5" ry="7"/>
-        <!-- head -->
-        <circle cx="16" cy="9" r="3.5"/>
-        <!-- eyes -->
-        <circle cx="14.5" cy="8" r="1" fill="#000"/>
-        <circle cx="17.5" cy="8" r="1" fill="#000"/>
-        <!-- antennae -->
-        <line x1="14" y1="6" x2="10" y2="2" stroke="#FF0800" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="18" y1="6" x2="22" y2="2" stroke="#FF0800" stroke-width="1.2" stroke-linecap="round"/>
-        <!-- left legs -->
-        <g class="bug-legs">
-          <line x1="12" y1="13" x2="7" y2="10" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
-          <line x1="11" y1="17" x2="5" y2="17" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
-          <line x1="12" y1="21" x2="7" y2="24" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
-        </g>
-        <!-- right legs -->
-        <g class="bug-legs" style="animation-delay:0.1s">
-          <line x1="20" y1="13" x2="25" y2="10" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
-          <line x1="21" y1="17" x2="27" y2="17" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
-          <line x1="20" y1="21" x2="25" y2="24" stroke="#FF0800" stroke-width="1.3" stroke-linecap="round"/>
-        </g>
-      </g>
-    </svg>`;
-
-      function createBug(cls) {
-        const el = document.createElement('div');
-        el.className = 'page-bug' + (cls ? ' ' + cls : '');
-        el.innerHTML = BUG_SVG;
-        document.body.appendChild(el);
-        return el;
-      }
-
-      function rand(min, max) { return Math.random() * (max - min) + min; }
-
-      function roam(bug) {
-        if (bug._dead) return;
-        const vw = window.innerWidth, vh = window.innerHeight;
-        const tx = rand(40, vw - 60), ty = rand(40, vh - 60);
-        const cx = parseFloat(bug.style.left) || vw / 2;
-        const cy = parseFloat(bug.style.top) || vh / 2;
-        const dx = tx - cx, dy = ty - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-        const speed = rand(60, 120); // px per second
-        const duration = (dist / speed) * 1000;
-
-        bug.style.transform = `rotate(${angle}deg)`;
-        bug.style.transition = `left ${duration}ms linear, top ${duration}ms linear`;
-        bug.style.left = tx + 'px';
-        bug.style.top = ty + 'px';
-
-        // pause sometimes
-        const pause = Math.random() < 0.3 ? rand(500, 2000) : 0;
-        bug._roamTimer = setTimeout(() => roam(bug), duration + pause);
-      }
-
-      function killBug(bug) {
-        bug._dead = true;
-        clearTimeout(bug._roamTimer);
-        bug.classList.add('dead');
-        // flip upside down
-        const cur = bug.style.transform || 'rotate(0deg)';
-        bug.style.transition = 'transform 0.4s ease';
-        bug.style.transform = cur + ' scaleY(-1)';
-
-        setTimeout(() => sendRescue(bug), 1200);
-      }
-
-      function sendRescue(deadBug) {
-        const dx = parseFloat(deadBug.style.left);
-        const dy = parseFloat(deadBug.style.top);
-        const exitX = dx < window.innerWidth / 2 ? -60 : window.innerWidth + 60;
-
-        // create two rescue bugs from the exit edge
-        const r1 = createBug('rescue');
-        const r2 = createBug('rescue');
-        r1.style.left = exitX + 'px'; r1.style.top = (dy - 20) + 'px';
-        r2.style.left = exitX + 'px'; r2.style.top = (dy + 20) + 'px';
-
-        const approachAngle = exitX < 0 ? 90 : -90;
-        r1.style.transform = `rotate(${approachAngle}deg)`;
-        r2.style.transform = `rotate(${approachAngle}deg)`;
-
-        // approach the dead bug
-        requestAnimationFrame(() => {
-          const dur = '1.5s';
-          r1.style.transition = `left ${dur} ease, top ${dur} ease`;
-          r2.style.transition = `left ${dur} ease, top ${dur} ease`;
-          r1.style.left = (dx - 14) + 'px'; r1.style.top = dy + 'px';
-          r2.style.left = (dx + 14) + 'px'; r2.style.top = dy + 'px';
+      // ── EKG Mini Monitors Animation ──
+      document.querySelectorAll('[data-ekg]').forEach(card => {
+        const draws = card.querySelectorAll('.ekg-mini-draw');
+        const glows = card.querySelectorAll('.ekg-mini-glow');
+        draws.forEach(p => {
+          const len = p.getTotalLength();
+          p.style.setProperty('--ml', len);
+          p.style.strokeDasharray = len;
+          p.style.strokeDashoffset = len;
+        });
+        glows.forEach(p => {
+          const len = p.getTotalLength();
+          p.style.setProperty('--ml', len);
+          p.style.strokeDasharray = len;
         });
 
-        // carry off
-        setTimeout(() => {
-          const carryAngle = exitX < 0 ? -90 : 90;
-          r1.style.transform = `rotate(${carryAngle}deg)`;
-          r2.style.transform = `rotate(${carryAngle}deg)`;
-          deadBug.style.transition = 'left 2s ease, top 2s ease, transform 2s ease';
-          r1.style.transition = 'left 2s ease, top 2s ease, transform 0.3s ease';
-          r2.style.transition = 'left 2s ease, top 2s ease, transform 0.3s ease';
-          deadBug.style.left = exitX + 'px';
-          r1.style.left = exitX + 'px';
-          r2.style.left = exitX + 'px';
-        }, 1800);
-
-        // cleanup & respawn
-        setTimeout(() => {
-          deadBug.remove(); r1.remove(); r2.remove();
-          spawnBug();
-        }, 4200);
-      }
-
-      function spawnBug() {
-        const bug = createBug();
-        const edge = Math.floor(rand(0, 4));
-        const vw = window.innerWidth, vh = window.innerHeight;
-        if (edge === 0) { bug.style.left = rand(0, vw) + 'px'; bug.style.top = '-30px'; }
-        else if (edge === 1) { bug.style.left = rand(0, vw) + 'px'; bug.style.top = (vh + 30) + 'px'; }
-        else if (edge === 2) { bug.style.left = '-30px'; bug.style.top = rand(0, vh) + 'px'; }
-        else { bug.style.left = (vw + 30) + 'px'; bug.style.top = rand(0, vh) + 'px'; }
-
-        bug.addEventListener('click', (e) => { e.stopPropagation(); killBug(bug); });
-        setTimeout(() => roam(bug), 300);
-      }
-
-      // start after page loads
-      setTimeout(spawnBug, 3000);
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              card.classList.add('active');
+            } else {
+              card.classList.remove('active');
+              draws.forEach(p => { p.style.strokeDashoffset = p.getTotalLength(); });
+            }
+          });
+        }, { threshold: 0.1 });
+        obs.observe(card);
+      });
     })();
   </script>
 
