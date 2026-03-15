@@ -1031,18 +1031,28 @@
     }
 
     .coming-badge {
-      position: absolute;
-      top: -12px;
-      left: 28px;
+      display: inline-flex;
+      align-items: center;
       background: var(--white);
       color: var(--black);
       font-family: var(--font-mono);
       font-size: 10px;
       font-weight: 700;
-      padding: 5px 14px;
+      padding: 4px 10px;
       border-radius: 6px;
       text-transform: uppercase;
       letter-spacing: 0.1em;
+      margin-left: auto;
+    }
+
+    .price-tier-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .price-tier-row .price-tier {
+      margin-bottom: 0;
     }
 
     .price-coming {
@@ -1631,6 +1641,141 @@
         border-radius: 18px;
       }
     }
+
+    /* ===== EARLY ACCESS FORMS ===== */
+    .ea-form {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .ea-form.centered {
+      margin: 0 auto;
+    }
+
+    .ea-input {
+      flex: 1;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border-dark);
+      background: var(--black-card);
+      color: white;
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .ea-input::placeholder {
+      color: #555;
+    }
+
+    .ea-input:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px #ff080022;
+    }
+
+    .ea-submit {
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      background: var(--red);
+      color: white;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ea-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px #ff080044;
+    }
+
+    .ea-submit:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .ea-submit .ea-spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff44;
+      border-top-color: white;
+      border-radius: 50%;
+      animation: eaSpin 0.6s linear infinite;
+    }
+
+    .ea-submit.loading .ea-label {
+      visibility: hidden;
+    }
+
+    .ea-submit.loading .ea-spinner {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    @keyframes eaSpin {
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    .ea-msg {
+      margin-top: 12px;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ea-msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .ea-msg.success {
+      color: var(--green);
+    }
+
+    .ea-msg.error {
+      color: var(--red);
+    }
+
+    /* Final CTA form variant */
+    .final-section .ea-form {
+      max-width: 480px;
+    }
+
+    .final-section .ea-input {
+      padding: 18px 22px;
+      font-size: 16px;
+      border-radius: 14px;
+    }
+
+    .final-section .ea-submit {
+      padding: 18px 28px;
+      font-size: 14px;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px #ff080033;
+    }
+
+    @media (max-width: 768px) {
+      .ea-form {
+        flex-direction: column;
+      }
+    }
   </style>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-QLSBYG334W"></script>
@@ -1641,6 +1786,8 @@
 
     gtag('config', 'G-QLSBYG334W');
   </script>
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -1790,7 +1937,7 @@
         <li><a href="#security">Security</a></li>
         <li><a href="#compare">Compare</a></li>
         <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#" class="nav-cta">$ install →</a></li>
+        <li><a href="#early-access" class="nav-cta">Get Early Access →</a></li>
       </ul>
     </div>
   </nav>
@@ -2196,8 +2343,10 @@
           <a href="#" class="btn-dark">pip install autopsy</a>
         </div>
         <div class="price-card coming-soon reveal-right">
-          <div class="coming-badge">Coming Soon</div>
-          <div class="price-tier">Cloud — For Teams</div>
+          <div class="price-tier-row">
+            <div class="price-tier">Cloud — For Teams</div>
+            <div class="coming-badge">Coming Soon</div>
+          </div>
           <div class="price-coming">Coming Soon</div>
           <p class="price-desc" style="color:#555;">Turn incidents into institutional knowledge. Team features launching
             soon.</p>
@@ -2208,21 +2357,21 @@
             <li>AI-generated post-mortems</li>
             <li>Slack integration</li>
           </ul>
-          <a href="#" class="btn-waitlist">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M22 2L11 13" />
-              <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-            </svg>
-            Join the Waitlist
-          </a>
+          <form class="ea-form" id="ea-form-pricing" onsubmit="handleEarlyAccess(event, this)">
+            <input type="email" class="ea-input" placeholder="you@company.com" required>
+            <button type="submit" class="ea-submit">
+              <span class="ea-label">Join Waitlist</span>
+              <span class="ea-spinner"></span>
+            </button>
+          </form>
+          <div class="ea-msg" id="ea-msg-pricing"></div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ========== FINAL CTA ========== -->
-  <div class="final-section" style="padding-top:140px;">
+  <div class="final-section" id="early-access" style="padding-top:140px;">
     <div class="reveal">
       <div
         style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:var(--red);border-radius:18px;margin-bottom:28px;box-shadow:0 12px 30px #ff080033;padding:10px;">
@@ -2231,17 +2380,17 @@
         </svg>
       </div>
     </div>
-    <h2 class="reveal stagger-1">Your next incident is<br><span class="dark-accent">30 seconds</span> away<br>from a
-      root cause.</h2>
-    <p class="reveal stagger-2">Stop grepping logs at 3am. Let AI correlate — you decide.</p>
+    <h2 class="reveal stagger-1">Get early access to<br><span class="dark-accent">AUTOPSY Cloud.</span></h2>
+    <p class="reveal stagger-2">Team dashboards, persistent history, AI post-mortems — be first in line.</p>
     <div class="reveal stagger-3">
-      <div class="final-cmd"
-        onclick="navigator.clipboard.writeText('pip install autopsy'); this.querySelector('.cp').textContent='Copied!'">
-        <span class="dollar">$</span>
-        pip install autopsy
-        <span class="cp"
-          style="font-size:10px;color:#ffffff55;font-family:var(--font-body);padding:3px 10px;background:#ffffff0a;border-radius:5px;text-transform:uppercase;letter-spacing:0.08em;">copy</span>
-      </div>
+      <form class="ea-form centered" id="ea-form-final" onsubmit="handleEarlyAccess(event, this)">
+        <input type="email" class="ea-input" placeholder="you@company.com" required>
+        <button type="submit" class="ea-submit">
+          <span class="ea-label">Get Access →</span>
+          <span class="ea-spinner"></span>
+        </button>
+      </form>
+      <div class="ea-msg" id="ea-msg-final" style="text-align:center;"></div>
     </div>
   </div>
 
@@ -2327,6 +2476,57 @@
         obs.observe(card);
       });
     })();
+
+    // ── Supabase Early Access ──
+    // TODO: Replace with your Supabase project URL and anon key
+    const SUPABASE_URL = 'https://paqhrqizpjqqtdleoqmk.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcWhycWl6cGpxcXRkbGVvcW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MDY2MjQsImV4cCI6MjA4OTE4MjYyNH0.HphekNI9zDoeWc_izqKzt4hr2Jc842QCBS7EeahleSo';
+    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function handleEarlyAccess(e, form) {
+      e.preventDefault();
+      const input = form.querySelector('.ea-input');
+      const btn = form.querySelector('.ea-submit');
+      const msgEl = form.parentElement.querySelector('.ea-msg') || form.nextElementSibling;
+      const email = input.value.trim();
+
+      if (!email) return;
+
+      // Loading state
+      btn.classList.add('loading');
+      btn.disabled = true;
+      msgEl.className = 'ea-msg';
+      msgEl.textContent = '';
+
+      try {
+        const { error } = await _supabase.from('waitlist').insert({ email });
+
+        if (error) {
+          if (error.code === '23505') {
+            // Unique constraint — already signed up
+            showMsg(msgEl, 'You\'re already on the list! 🎉', 'success');
+          } else {
+            showMsg(msgEl, 'Something went wrong. Try again.', 'error');
+            console.error(error);
+          }
+        } else {
+          showMsg(msgEl, 'You\'re on the list! We\'ll be in touch. 🎉', 'success');
+          input.value = '';
+        }
+      } catch (err) {
+        showMsg(msgEl, 'Network error. Please try again.', 'error');
+        console.error(err);
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    function showMsg(el, text, type) {
+      el.textContent = text;
+      el.className = 'ea-msg ' + type;
+      requestAnimationFrame(() => el.classList.add('show'));
+    }
   </script>
 
 </body>
