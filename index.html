@@ -5,24 +5,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AUTOPSY — Diagnose Production Incidents in 30 Seconds</title>
-  <meta name="description" content="AI-powered incident diagnosis for engineering teams. Pull logs and deploys, get a structured root cause in 30 seconds.">
-  <meta name="keywords" content="incident diagnosis, production incident, AI debugging, root cause analysis, DevOps, SRE">
+  <meta name="description"
+    content="AI-powered incident diagnosis for engineering teams. Pull logs and deploys, get a structured root cause in 30 seconds.">
+  <meta name="keywords"
+    content="incident diagnosis, production incident, AI debugging, root cause analysis, DevOps, SRE">
   <meta name="author" content="Autopsy">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://autopsy.cloud/">
   <meta property="og:title" content="AUTOPSY — Diagnose Production Incidents in 30 Seconds">
-  <meta property="og:description" content="AI-powered incident diagnosis for engineering teams. Pull logs and deploys, get a structured root cause in 30 seconds.">
+  <meta property="og:description"
+    content="AI-powered incident diagnosis for engineering teams. Pull logs and deploys, get a structured root cause in 30 seconds.">
   <meta property="og:image" content="https://autopsy.cloud/og-image.png">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="https://autopsy.cloud/">
   <meta property="twitter:title" content="AUTOPSY — Diagnose Production Incidents in 30 Seconds">
-  <meta property="twitter:description" content="AI-powered incident diagnosis for engineering teams. Pull logs and deploys, get a structured root cause in 30 seconds.">
+  <meta property="twitter:description"
+    content="AI-powered incident diagnosis for engineering teams. Pull logs and deploys, get a structured root cause in 30 seconds.">
   <meta property="twitter:image" content="https://autopsy.cloud/og-image.png">
-  
+
   <link rel="canonical" href="https://autopsy.cloud/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
@@ -40,7 +44,7 @@
     :root {
       --red: #FF0800;
       --red-dark: #cc0600;
-      --black: #0a0a0b;
+      --black: #000000;
       --black-card: #111114;
       --black-elevated: #1a1a1f;
       --border-dark: #2a2a30;
@@ -61,7 +65,11 @@
 
     body {
       font-family: var(--font-body);
-      background: var(--red);
+      background: var(--black);
+      background-image:
+        linear-gradient(rgba(255, 8, 0, 0.04) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255, 8, 0, 0.04) 2px, transparent 2px);
+      background-size: 80px 80px;
       color: var(--white);
       line-height: 1.6;
       overflow-x: hidden;
@@ -167,8 +175,8 @@
     }
 
     .icon-box.on-dark {
-      background: #ff08001a;
-      border: 1px solid #ff080033;
+      background: #ff080020;
+      border: 1px solid #ff080040;
     }
 
     .icon-box svg {
@@ -183,9 +191,9 @@
       width: 100%;
       z-index: 100;
       padding: 14px 0;
-      background: #ff0800ee;
+      background: #0a0a0bee;
       backdrop-filter: blur(24px) saturate(1.4);
-      border-bottom: 1px solid #ffffff18;
+      border-bottom: 1px solid #ffffff10;
       transition: all 0.3s;
     }
 
@@ -213,12 +221,12 @@
     .logo-mark {
       width: 36px;
       height: 36px;
-      background: var(--black);
+      background: var(--red);
       border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px #00000044;
+      box-shadow: 0 2px 8px #ff080044;
       padding: 4px;
     }
 
@@ -242,8 +250,8 @@
     }
 
     .nav-cta {
-      background: var(--black) !important;
-      color: var(--red) !important;
+      background: var(--red) !important;
+      color: white !important;
       padding: 9px 22px;
       border-radius: 8px;
       font-weight: 700 !important;
@@ -254,7 +262,7 @@
 
     .nav-cta:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px #00000044;
+      box-shadow: 0 8px 24px #ff080044;
     }
 
     /* ===== HERO ===== */
@@ -301,10 +309,10 @@
       justify-content: center;
       width: 88px;
       height: 88px;
-      background: var(--black);
+      background: var(--red);
       border-radius: 22px;
       margin-bottom: 32px;
-      box-shadow: 0 20px 40px #00000044;
+      box-shadow: 0 20px 40px #ff080033;
       animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
       padding: 12px;
     }
@@ -328,7 +336,7 @@
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--black);
+      background: var(--red);
       animation: pulse 2s infinite;
     }
 
@@ -396,13 +404,13 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      background: var(--black);
-      border: 2px solid var(--black);
+      background: var(--red);
+      border: 2px solid var(--red);
       border-radius: 12px;
       padding: 16px 28px;
       font-family: var(--font-mono);
       font-size: 16px;
-      color: var(--red);
+      color: white;
       cursor: pointer;
       font-weight: 600;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -410,7 +418,7 @@
 
     .install-cmd:hover {
       transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 20px 40px #00000055;
+      box-shadow: 0 20px 40px #ff080055;
     }
 
     .install-cmd .dollar {
@@ -444,11 +452,11 @@
     }
 
     .btn-ghost:hover {
-      background: white;
-      color: var(--red);
-      border-color: white;
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
       transform: translateY(-3px);
-      box-shadow: 0 20px 40px #00000033;
+      box-shadow: 0 20px 40px #ff080033;
     }
 
     .hero-proof {
@@ -470,10 +478,10 @@
     }
 
     .terminal {
-      background: var(--black);
+      background: var(--black-card);
       border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 60px 120px -30px #00000088, 0 0 0 1px #ffffff10;
+      box-shadow: 0 60px 120px -30px #ff080022, 0 0 0 1px #ff080020;
     }
 
     .terminal-bar {
@@ -643,7 +651,7 @@
     }
 
     .section-label.on-red {
-      color: var(--black);
+      color: var(--red);
     }
 
     .section-title {
@@ -663,16 +671,16 @@
     }
 
     .section-sub.on-dark {
-      color: #888;
+      color: var(--black);
     }
 
     .section-sub.on-red {
-      color: var(--white-dim);
+      color: #aaa;
     }
 
     /* ===== DARK SECTIONS ===== */
     .dark-section {
-      background: var(--black);
+      background: var(--red);
       position: relative;
     }
 
@@ -683,7 +691,7 @@
       left: 0;
       right: 0;
       height: 120px;
-      background: var(--black);
+      background: var(--red);
       clip-path: polygon(0 50%, 100% 0, 100% 100%, 0% 100%);
       z-index: 1;
     }
@@ -695,7 +703,7 @@
       left: 0;
       right: 0;
       height: 120px;
-      background: var(--black);
+      background: var(--red);
       clip-path: polygon(0 0, 100% 0, 100% 50%, 0% 100%);
       z-index: 1;
     }
@@ -722,7 +730,8 @@
     }
 
     .step-card {
-      background: var(--black);
+      background: var(--black-card);
+      border: 1px solid var(--border-dark);
       border-radius: 18px;
       padding: 40px 32px;
       position: relative;
@@ -733,7 +742,8 @@
 
     .step-card:hover {
       transform: translateY(-8px);
-      box-shadow: 0 30px 60px #00000055;
+      box-shadow: 0 30px 60px #ff080022;
+      border-color: #ff080044;
     }
 
     .step-number {
@@ -783,8 +793,8 @@
     }
 
     .zt-diagram {
-      background: var(--black-card);
-      border: 1px solid var(--border-dark);
+      background: #1a0000;
+      border: 1px solid #ff080033;
       border-radius: 18px;
       padding: 36px;
       position: relative;
@@ -904,7 +914,7 @@
 
     .zt-feat p {
       font-size: 14px;
-      color: #777;
+      color: var(--black);
       line-height: 1.6;
     }
 
@@ -934,7 +944,7 @@
     }
 
     .compare-table thead th {
-      background: var(--black);
+      background: var(--black-card);
       color: #888;
       font-weight: 700;
       font-size: 11px;
@@ -984,8 +994,8 @@
     }
 
     .price-card {
-      background: var(--black-card);
-      border: 1px solid var(--border-dark);
+      background: #1a0000;
+      border: 1px solid #ff080033;
       border-radius: 18px;
       padding: 48px 36px;
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -993,13 +1003,13 @@
 
     .price-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 20px 40px #00000055;
+      box-shadow: 0 20px 40px #ff080033;
     }
 
     .price-card.featured {
       border-color: var(--red);
       position: relative;
-      box-shadow: 0 0 40px #ff08001a;
+      box-shadow: 0 0 40px #ff08002a;
     }
 
     .price-card.coming-soon {
@@ -1086,8 +1096,8 @@
       position: absolute;
       top: -12px;
       left: 28px;
-      background: var(--red);
-      color: white;
+      background: white;
+      color: var(--black);
       font-family: var(--font-mono);
       font-size: 10px;
       font-weight: 700;
@@ -1214,7 +1224,7 @@
       font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 700;
-      color: var(--black);
+      color: var(--red);
       text-transform: uppercase;
       letter-spacing: 0.15em;
       margin-bottom: 10px;
@@ -1236,7 +1246,7 @@
     }
 
     .ekg-mini {
-      background: var(--black);
+      background: var(--black-card);
       border: 1px solid var(--border-dark);
       border-radius: 14px;
       padding: 20px;
@@ -1249,7 +1259,7 @@
     .ekg-mini:hover {
       transform: translateY(-4px);
       border-color: #ff080044;
-      box-shadow: 0 20px 40px #00000055;
+      box-shadow: 0 20px 40px #ff080022;
     }
 
     /* span last 2 across bottom row */
@@ -1500,7 +1510,7 @@
     }
 
     .final-section h2 .dark-accent {
-      color: var(--black);
+      color: var(--red);
     }
 
     .final-section p {
@@ -1513,21 +1523,21 @@
       display: inline-flex;
       align-items: center;
       gap: 16px;
-      background: var(--black);
+      background: var(--red);
       border-radius: 14px;
       padding: 22px 36px;
       font-family: var(--font-mono);
       font-size: 18px;
       font-weight: 600;
-      color: var(--red);
+      color: white;
       cursor: pointer;
-      box-shadow: 0 20px 60px #00000044;
+      box-shadow: 0 20px 60px #ff080033;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .final-cmd:hover {
       transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 30px 80px #00000066;
+      box-shadow: 0 30px 80px #ff080055;
     }
 
     .final-cmd .dollar {
@@ -1536,10 +1546,11 @@
 
     /* ===== FOOTER ===== */
     footer {
-      background: var(--black);
+      background: var(--black-card);
       padding: 40px;
       position: relative;
       z-index: 2;
+      border-top: 1px solid var(--border-dark);
     }
 
     .footer-inner {
@@ -1768,13 +1779,13 @@
       <a href="#" class="logo">
         <div class="logo-mark">
           <svg class="pixel-logo" width="28" height="28" shape-rendering="crispEdges">
-            <use href="#pixel-plug-red" />
+            <use href="#pixel-plug-dark" />
           </svg>
         </div>
         AUTOPSY
       </a>
       <ul class="nav-links">
-        <li><a href="autopsy-docs.html" style="color: var(--black); font-weight: 700;">Docs</a></li>
+        <li><a href="autopsy-docs.html" style="color: var(--red); font-weight: 700;">Docs</a></li>
         <li><a href="#how">How It Works</a></li>
         <li><a href="#security">Security</a></li>
         <li><a href="#compare">Compare</a></li>
@@ -1807,7 +1818,7 @@
       </div>
       <a href="#" class="btn-ghost">View on GitHub →</a>
     </div>
-    <p class="hero-proof">Used by SREs at <strong>50+ startups</strong>. Zero config. Zero vendor lock-in.</p>
+    <p class="hero-proof">Because <strong>Googling stack traces at 3am</strong> is not an incident response plan.</p>
   </div>
 
   <!-- ========== TERMINAL ========== -->
@@ -2214,9 +2225,9 @@
   <div class="final-section" style="padding-top:140px;">
     <div class="reveal">
       <div
-        style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:var(--black);border-radius:18px;margin-bottom:28px;box-shadow:0 12px 30px #00000044;padding:10px;">
+        style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:var(--red);border-radius:18px;margin-bottom:28px;box-shadow:0 12px 30px #ff080033;padding:10px;">
         <svg class="pixel-logo" width="44" height="44" shape-rendering="crispEdges">
-          <use href="#pixel-plug-red" />
+          <use href="#pixel-plug-dark" />
         </svg>
       </div>
     </div>
@@ -2283,8 +2294,8 @@
 
       const nav = document.querySelector('nav');
       window.addEventListener('scroll', () => {
-        if (window.scrollY > 80) { nav.style.background = '#cc0600f5'; nav.style.boxShadow = '0 4px 20px #00000033'; }
-        else { nav.style.background = '#ff0800ee'; nav.style.boxShadow = 'none'; }
+        if (window.scrollY > 80) { nav.style.background = '#0a0a0bf8'; nav.style.boxShadow = '0 4px 20px #00000066'; }
+        else { nav.style.background = '#0a0a0bee'; nav.style.boxShadow = 'none'; }
       });
 
       // ── EKG Mini Monitors Animation ──
